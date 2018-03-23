@@ -117,6 +117,23 @@ func (rc *RecConn) WriteJSON(v interface{}) error {
 	return err
 }
 
+// ReadJSON reads the JSON encoding of v to the connection.
+//
+//
+// If the connection is closed ErrNotConnected is returned
+func (rc *RecConn) ReadJSON(v interface{}) {
+	err := ErrNotConnected
+	if rc.IsConnected() {
+		err = rc.Conn.ReadJSON(v)
+		if err != nil {
+			rc.closeAndRecconect()
+		}
+	}
+
+	return
+}
+
+
 // Dial creates a new client connection.
 // The URL url specifies the host and request URI. Use requestHeader to specify
 // the origin (Origin), subprotocols (Sec-WebSocket-Protocol) and cookies
@@ -141,6 +158,7 @@ func (rc *RecConn) Dial(urlStr string, reqHeader http.Header) {
 	}
 
 	rc.url = urlStr
+	rc.reqHeader = reqHeader
 
 	if rc.RecIntvlMin == 0 {
 		rc.RecIntvlMin = 2 * time.Second
